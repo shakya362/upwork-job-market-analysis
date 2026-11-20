@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Job Recommender</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:860px;margin:0 auto;padding:16px;color:#222}
+form{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:12px 0}
+input,select,button{padding:9px;font-size:15px;border:1px solid #bbb;border-radius:6px}
+#q{grid-column:1/-1}button{background:#14532d;color:#fff;border:0;cursor:pointer}
+.job{border:1px solid #ddd;border-radius:8px;padding:10px 12px;margin:8px 0}.job a{font-weight:600;color:#14532d;text-decoration:none}
+.m{color:#555;font-size:13px}nav a{margin-right:12px}
+</style></head><body>
+<h1>Find jobs</h1>
+<nav><a href="/dashboard">Dashboard</a><a href="/reports/task4_hourly_rate_map.html">Rate map</a><a href="/api/meta">API meta</a></nav>
+<p class="m">{{ "{:,}".format(meta.n_jobs) }} current postings indexed ({{ meta.date_range[0][:10] }} to {{ meta.date_range[1][:10] }}).</p>
+<form id="f">
+ <input id="q" name="query" placeholder="Skills or role, e.g. python data scientist, shopify developer, video editor" required>
+ <select name="country"><option value="">Any country</option>{% for c in meta.countries %}<option>{{ c }}</option>{% endfor %}</select>
+ <select name="job_type"><option value="">Hourly or fixed</option><option value="hourly">Hourly</option><option value="fixed">Fixed price</option></select>
+ <input name="min_rate" type="number" min="0" placeholder="Min $/h or budget">
+ <label><input type="checkbox" name="remote_only"> Remote-titled only</label>
+ <button>Recommend</button>
+</form>
+<div id="out"></div>
+<script>
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+document.getElementById('f').addEventListener('submit',async e=>{
+ e.preventDefault();const d=Object.fromEntries(new FormData(e.target));d.remote_only=!!d.remote_only;
+ const o=document.getElementById('out');o.textContent='Searching...';
+ const r=await fetch('/api/recommend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+ const j=await r.json();if(!r.ok){o.textContent=j.error;return}
+ o.innerHTML=j.count?j.results.map(x=>{const pay=x.is_hourly?`$${x.hourly_low??'?'}-${x.hourly_high??'?'}/h`:(x.budget?`$${x.budget} fixed`:'budget n/a');
+ return `<div class="job"><a href="${esc(x.link)}" target="_blank" rel="noopener">${esc(x.title)}</a><div class="m">${esc(pay)} · ${esc(x.country||'Unknown')} · ${esc(x.category)} · score ${x.score}</div></div>`}).join(''):'No matches. Try broader keywords or fewer filters.';
+});
+</script></body></html>
