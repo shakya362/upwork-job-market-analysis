@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+.DS_Store
+# raw data (49 MB) and rebuilt models are not committed; the Streamlit app only needs data/processed/ and reports/
+data/raw/*.csv
+models/*.joblib
