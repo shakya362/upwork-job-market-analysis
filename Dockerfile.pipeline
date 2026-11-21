@@ -1,8 +1,0 @@
-FROM python:3.12-slim
-WORKDIR /srv
-ENV PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY src ./src
-# Runs all 8 tasks at start-up, then again on the 1st of every month (Task 6)
-CMD ["python", "-m", "src.scheduler"]
